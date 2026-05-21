@@ -1,6 +1,6 @@
 # xtensor-nanobind benchmark (AI generated)
 
-Benchmark suite comparing nanobind's xtensor binding types against numpy and native C++ baselines.
+Benchmark suite comparing nanobind's xtensor binding types against numpy and native C++ baselines, with optional xtensor-python cross-framework comparison.
 
 ## What it measures
 
@@ -9,8 +9,8 @@ Benchmark suite comparing nanobind's xtensor binding types against numpy and nat
 | **Call overhead** | Minimal-work function call — isolates type caster/conversion cost |
 | **Sum reduction (1D/2D)** | Iterate all elements via `xt::sum` — measures iteration speed |
 | **Element-wise compute** | `sin(a) * s + t` — tests xtensor expression template evaluation |
-| **Vectorization** | `abs()` on complex array — `nb::xvectorize` vs numpy |
-| **Layout comparison** | `row_major` (flat pointer) vs `dynamic` (stepper) view iteration |
+| **2D compute layouts** | `sin(a) * s + t` on 2D arrays with explicit `row_major` / `column_major` / `dynamic` layouts across all binding types |
+| **Vectorization** | `abs()` on centered array — `nb::xvectorize` vs numpy |
 
 ### Binding types compared
 
@@ -184,15 +184,23 @@ PYTHONPATH=build .venv/bin/python scripts/run_benchmarks.py
 | nb::xvectorize |     111.3 us |  1.0949x |
 +----------------+--------------+----------+
 
-=== Layout: row_major vs dynamic (xarray_view) ===
-+--------------+--------------+----------+
-| Backend      |    Time/call |  Speedup |
-+--------------+--------------+----------+
-| 1D row_major |     392.0 us |  1.0000x |
-| 1D dynamic   |     395.0 us |  0.9923x |
-| 2D row_major |     368.7 us |  1.0631x |
-| 2D dynamic   |     376.5 us |  1.0411x |
-+--------------+--------------+----------+
+=== 2D Compute sin(a)*s+t (1000x1000, layout variants) ===
++----------------------+--------------+----------+
+| Backend              |    Time/call |  Speedup |
++----------------------+--------------+----------+
+| xarray row_major     |      XXX us  |  1.0000x |
+| xarray col_major     |      XXX us  |  0.XXXXx |
+| xarray dynamic       |      XXX us  |  0.XXXXx |
+| xtensor row_major    |      XXX us  |  0.XXXXx |
+| xtensor col_major    |      XXX us  |  0.XXXXx |
+| xtensor dynamic      |      XXX us  |  0.XXXXx |
+| view row_major       |      XXX us  |  0.XXXXx |
+| view col_major       |      XXX us  |  0.XXXXx |
+| view dynamic         |      XXX us  |  0.XXXXx |
+| tensor_view row_major|      XXX us  |  0.XXXXx |
+| tensor_view col_major|      XXX us  |  0.XXXXx |
+| tensor_view dynamic  |      XXX us  |  0.XXXXx |
++----------------------+--------------+----------+
 ```
 
 (Actual results depend on hardware, compiler, and numpy version.)

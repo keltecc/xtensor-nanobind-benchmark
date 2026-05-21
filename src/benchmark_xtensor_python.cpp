@@ -2,19 +2,32 @@
 #include <chrono>
 #include <vector>
 
-#include <nanobind/nanobind.h>
-#include <nanobind/ndarray.h>
-#include <nanobind/xtensor.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
+
+#define FORCE_IMPORT_ARRAY
+#include <xtensor-python/pyarray.hpp>
+#include <xtensor-python/pytensor.hpp>
+#include <xtensor-python/pyvectorize.hpp>
+#include <xtensor-python/pynative_casters.hpp>
+
+#include <xtensor/containers/xarray.hpp>
+#include <xtensor/containers/xtensor.hpp>
 #include <xtensor/core/xmath.hpp>
 
-namespace nb = nanobind;
-NB_MODULE(benchmark_ext, m) {
+namespace py = pybind11;
+
+PYBIND11_MODULE(benchmark_xtp_ext, m) {
+    xt::import_numpy();
 
 #ifdef XTENSOR_USE_XSIMD
     m.attr("has_xsimd") = true;
 #else
     m.attr("has_xsimd") = false;
 #endif
+
+    // Minimum C++ numpy binding — closest equivalent to nb::ndarray.
+    using array_t_c = py::array_t<double, py::array::c_style | py::array::forcecast>;
 
     // =========================================================================
     // Call overhead: return first element (isolates caster/conversion cost)
@@ -28,15 +41,15 @@ NB_MODULE(benchmark_ext, m) {
         return a(0);
     });
 
-    m.def("noop_xarray_view", [](const nb::xarray_view<double>& a) {
+    m.def("noop_pyarray", [](const xt::pyarray<double>& a) {
         return a(0);
     });
 
-    m.def("noop_xtensor_view", [](const nb::xtensor_view<double, 1>& a) {
+    m.def("noop_pytensor", [](const xt::pytensor<double, 1>& a) {
         return a(0);
     });
 
-    m.def("noop_ndarray", [](nb::ndarray<double, nb::numpy, nb::ndim<1>> a) {
+    m.def("noop_array_t", [](array_t_c a) {
         return a.data()[0];
     });
 
@@ -52,18 +65,18 @@ NB_MODULE(benchmark_ext, m) {
         return xt::sum(a)();
     });
 
-    m.def("sum_xarray_view", [](const nb::xarray_view<double>& a) {
+    m.def("sum_pyarray", [](const xt::pyarray<double>& a) {
         return xt::sum(a)();
     });
 
-    m.def("sum_xtensor_view", [](const nb::xtensor_view<double, 1>& a) {
+    m.def("sum_pytensor", [](const xt::pytensor<double, 1>& a) {
         return xt::sum(a)();
     });
 
-    m.def("sum_ndarray", [](nb::ndarray<double, nb::numpy, nb::ndim<1>> a) {
+    m.def("sum_array_t", [](array_t_c a) {
         double s = 0.0;
         const double* ptr = a.data();
-        size_t n = a.shape(0);
+        size_t n = static_cast<size_t>(a.shape(0));
         for (size_t i = 0; i < n; ++i)
             s += ptr[i];
         return s;
@@ -81,18 +94,18 @@ NB_MODULE(benchmark_ext, m) {
         return xt::sum(a)();
     });
 
-    m.def("sum2d_xarray_view", [](const nb::xarray_view<double>& a) {
+    m.def("sum2d_pyarray", [](const xt::pyarray<double>& a) {
         return xt::sum(a)();
     });
 
-    m.def("sum2d_xtensor_view", [](const nb::xtensor_view<double, 2>& a) {
+    m.def("sum2d_pytensor", [](const xt::pytensor<double, 2>& a) {
         return xt::sum(a)();
     });
 
-    m.def("sum2d_ndarray", [](nb::ndarray<double, nb::numpy, nb::ndim<2>> a) {
+    m.def("sum2d_array_t", [](py::array_t<double, py::array::c_style | py::array::forcecast> a) {
         double s = 0.0;
         const double* ptr = a.data();
-        size_t n = a.shape(0) * a.shape(1);
+        size_t n = static_cast<size_t>(a.shape(0)) * static_cast<size_t>(a.shape(1));
         for (size_t i = 0; i < n; ++i)
             s += ptr[i];
         return s;
@@ -100,27 +113,26 @@ NB_MODULE(benchmark_ext, m) {
 
     // =========================================================================
     // Element-wise computation: sin(a) * s + t
-    // Parameters must be const& because xtensor expressions capture references.
     // =========================================================================
 
     m.def("compute_xarray",
         [](const xt::xarray<double>& a, const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+        return xt::xarray<double>(xt::sin(a) * s + t);
     });
 
     m.def("compute_xtensor",
         [](const xt::xtensor<double, 1>& a, const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+        return xt::xtensor<double, 1>(xt::sin(a) * s + t);
     });
 
-    m.def("compute_xarray_view",
-        [](const nb::xarray_view<double>& a, const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+    m.def("compute_pyarray",
+        [](const xt::pyarray<double>& a, const double& s, const double& t) {
+        return xt::pyarray<double>(xt::sin(a) * s + t);
     });
 
-    m.def("compute_xtensor_view",
-        [](const nb::xtensor_view<double, 1>& a, const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+    m.def("compute_pytensor",
+        [](const xt::pytensor<double, 1>& a, const double& s, const double& t) {
+        return xt::pytensor<double, 1>(xt::sin(a) * s + t);
     });
 
     // =========================================================================
@@ -132,82 +144,81 @@ NB_MODULE(benchmark_ext, m) {
     m.def("compute2d_xarray_row_major",
         [](const xt::xarray<double, xt::layout_type::row_major>& a,
             const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+        return xt::xarray<double>(xt::sin(a) * s + t);
     });
     m.def("compute2d_xarray_column_major",
         [](const xt::xarray<double, xt::layout_type::column_major>& a,
             const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+        return xt::xarray<double>(xt::sin(a) * s + t);
     });
     m.def("compute2d_xarray_dynamic",
         [](const xt::xarray<double>& a, const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+        return xt::xarray<double>(xt::sin(a) * s + t);
     });
 
     // --- xtensor (owning, 2D) ---
     m.def("compute2d_xtensor_row_major",
         [](const xt::xtensor<double, 2, xt::layout_type::row_major>& a,
             const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+        return xt::xtensor<double, 2>(xt::sin(a) * s + t);
     });
     m.def("compute2d_xtensor_column_major",
         [](const xt::xtensor<double, 2, xt::layout_type::column_major>& a,
             const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+        return xt::xtensor<double, 2>(xt::sin(a) * s + t);
     });
     m.def("compute2d_xtensor_dynamic",
         [](const xt::xtensor<double, 2>& a, const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+        return xt::xtensor<double, 2>(xt::sin(a) * s + t);
     });
 
-    // --- xarray_view (zero-copy) ---
-    m.def("compute2d_xarray_view_row_major",
-        [](const nb::xarray_view<double, xt::layout_type::row_major>& a,
+    // --- pyarray (zero-copy) ---
+    m.def("compute2d_pyarray_row_major",
+        [](const xt::pyarray<double, xt::layout_type::row_major>& a,
             const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+        return xt::pyarray<double>(xt::sin(a) * s + t);
     });
-    m.def("compute2d_xarray_view_column_major",
-        [](const nb::xarray_view<double, xt::layout_type::column_major>& a,
+    m.def("compute2d_pyarray_column_major",
+        [](const xt::pyarray<double, xt::layout_type::column_major>& a,
             const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+        return xt::pyarray<double>(xt::sin(a) * s + t);
     });
-    m.def("compute2d_xarray_view_dynamic",
-        [](const nb::xarray_view<double>& a, const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+    m.def("compute2d_pyarray_dynamic",
+        [](const xt::pyarray<double>& a, const double& s, const double& t) {
+        return xt::pyarray<double>(xt::sin(a) * s + t);
     });
 
-    // --- xtensor_view (zero-copy, 2D) ---
-    m.def("compute2d_xtensor_view_row_major",
-        [](const nb::xtensor_view<double, 2, xt::layout_type::row_major>& a,
+    // --- pytensor (zero-copy, 2D) ---
+    m.def("compute2d_pytensor_row_major",
+        [](const xt::pytensor<double, 2, xt::layout_type::row_major>& a,
             const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+        return xt::pytensor<double, 2>(xt::sin(a) * s + t);
     });
-    m.def("compute2d_xtensor_view_column_major",
-        [](const nb::xtensor_view<double, 2, xt::layout_type::column_major>& a,
+    m.def("compute2d_pytensor_column_major",
+        [](const xt::pytensor<double, 2, xt::layout_type::column_major>& a,
             const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+        return xt::pytensor<double, 2>(xt::sin(a) * s + t);
     });
-    m.def("compute2d_xtensor_view_dynamic",
-        [](const nb::xtensor_view<double, 2>& a, const double& s, const double& t) {
-        return xt::sin(a) * s + t;
+    m.def("compute2d_pytensor_dynamic",
+        [](const xt::pytensor<double, 2>& a, const double& s, const double& t) {
+        return xt::pytensor<double, 2>(xt::sin(a) * s + t);
     });
 
     // =========================================================================
     // Vectorization: abs on float64
     // =========================================================================
 
-    m.def("vectorize_abs", nb::xvectorize([](double x) -> double {
+    m.def("vectorize_abs", xt::pyvectorize([](double x) -> double {
         return std::abs(x);
     }));
 
     // =========================================================================
-    // Native C++ baselines: run N iterations internally with chrono timing.
-    // Returns (result, elapsed_ms) to bypass Python per-call overhead.
+    // Native C++ baselines (identical to nanobind version).
     // =========================================================================
 
-    m.def("native_sum", [](nb::ndarray<double, nb::numpy, nb::ndim<1>> a, int iters) {
+    m.def("native_sum", [](array_t_c a, int iters) {
         const double* ptr = a.data();
-        size_t n = a.shape(0);
+        size_t n = static_cast<size_t>(a.shape(0));
         auto start = std::chrono::high_resolution_clock::now();
         double result = 0.0;
         for (int it = 0; it < iters; ++it) {
@@ -218,13 +229,12 @@ NB_MODULE(benchmark_ext, m) {
         }
         auto end = std::chrono::high_resolution_clock::now();
         double ms = std::chrono::duration<double, std::milli>(end - start).count();
-        return nb::make_tuple(result, ms);
+        return py::make_tuple(result, ms);
     });
 
-    m.def("native_compute", [](nb::ndarray<double, nb::numpy, nb::ndim<1>> a,
-                                double s, double t, int iters) {
+    m.def("native_compute", [](array_t_c a, double s, double t, int iters) {
         const double* ptr = a.data();
-        size_t n = a.shape(0);
+        size_t n = static_cast<size_t>(a.shape(0));
         std::vector<double> out(n);
         auto start = std::chrono::high_resolution_clock::now();
         for (int it = 0; it < iters; ++it) {
@@ -233,12 +243,13 @@ NB_MODULE(benchmark_ext, m) {
         }
         auto end = std::chrono::high_resolution_clock::now();
         double ms = std::chrono::duration<double, std::milli>(end - start).count();
-        return nb::make_tuple(out[0], ms);
+        return py::make_tuple(out[0], ms);
     });
 
-    m.def("native_sum2d", [](nb::ndarray<double, nb::numpy, nb::ndim<2>> a, int iters) {
+    m.def("native_sum2d", [](py::array_t<double, py::array::c_style | py::array::forcecast> a,
+                              int iters) {
         const double* ptr = a.data();
-        size_t n = a.shape(0) * a.shape(1);
+        size_t n = static_cast<size_t>(a.shape(0)) * static_cast<size_t>(a.shape(1));
         auto start = std::chrono::high_resolution_clock::now();
         double result = 0.0;
         for (int it = 0; it < iters; ++it) {
@@ -249,6 +260,6 @@ NB_MODULE(benchmark_ext, m) {
         }
         auto end = std::chrono::high_resolution_clock::now();
         double ms = std::chrono::duration<double, std::milli>(end - start).count();
-        return nb::make_tuple(result, ms);
+        return py::make_tuple(result, ms);
     });
 }
