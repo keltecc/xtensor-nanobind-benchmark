@@ -37,23 +37,14 @@ Benchmark suite comparing nanobind's xtensor binding types against numpy and nat
 
 All four are header-only libraries. Building them with CMake generates the config files needed by `find_package()`.
 
-With apt (Debian/Ubuntu):
-```bash
-sudo apt install libxtensor-dev xtl-dev libxsimd-dev
-```
-(xtensor-python is not packaged in apt — build from source or use conda.)
+Example build from source:
 
-With conda:
 ```bash
-conda install xtensor xtl xsimd xtensor-python -c conda-forge
-```
-
-Or build from source:
-```bash
-git clone https://github.com/xtensor-stack/xtl       && cd xtl       && cmake -B build && cd ..
-git clone https://github.com/xtensor-stack/xsimd     && cd xsimd     && cmake -B build && cd ..
-git clone https://github.com/xtensor-stack/xtensor   && cd xtensor   && cmake -B build -Dxtl_DIR=../xtl/build && cd ..
-git clone https://github.com/xtensor-stack/xtensor-python && cd xtensor-python && cmake -B build && cd ..
+git clone https://github.com/xtensor-stack/xtl && cd xtl && cmake . && sudo make install && cd ..
+git clone https://github.com/xtensor-stack/xsimd && cd xsimd && cmake . && sudo make install && cd ..
+git clone https://github.com/xtensor-stack/xtensor && cd xtensor && cmake . && sudo make install && cd ..
+git clone https://github.com/xtensor-stack/xtensor-python
+git clone https://github.com/wjakob/nanobind --recursive
 ```
 
 ## Quick start
@@ -78,45 +69,14 @@ Pass paths to dependencies that are not installed system-wide via their `*_DIR` 
 make clean
 make build \
     NANOBIND_DIR=/path/to/nanobind \
+    XTENSOR_PYTHON_DIR=/path/to/xtensor-python \
     XTENSOR_DIR=/path/to/xtensor/build \
     XTL_DIR=/path/to/xtl/build \
-    XSIMD_DIR=/path/to/xsimd/build \
-    XTENSOR_PYTHON_DIR=/path/to/xtensor-python/build
+    XSIMD_DIR=/path/to/xsimd/build
 make benchmark
 ```
 
 The benchmark runner automatically detects which backends are available (nanobind, xtensor-python, or both) and prints a cross-framework comparison table when both are present.
-
-### Custom compiler
-
-```bash
-make build CMAKE_CXX_COMPILER=g++-14
-```
-
-## Manual build
-
-```bash
-# Create venv
-python3 -m venv .venv
-.venv/bin/pip install numpy
-
-# Build (nanobind only)
-cmake -S . -B build \
-    -DNANOBIND_DIR=/path/to/nanobind \
-    -DPython_ROOT_DIR=.venv \
-    -Dxtensor_DIR=/path/to/xtensor/build \
-    -Dxtl_DIR=/path/to/xtl/build \
-    -Dxsimd_DIR=/path/to/xsimd/build \
-    -DCMAKE_BUILD_TYPE=Release
-
-# With xtensor-python, add:
-#   -DXTENSOR_PYTHON_DIR=/path/to/xtensor-python/build
-
-cmake --build build -j
-
-# Run
-PYTHONPATH=build .venv/bin/python scripts/run_benchmarks.py
-```
 
 ## Sample output
 
@@ -144,12 +104,12 @@ PYTHONPATH=build .venv/bin/python scripts/run_benchmarks.py
 +---------------+--------------+
 | Backend       |    Time/call |
 +---------------+--------------+
-| numpy         |        34 ns |
-| ndarray       |        87 ns |
-| view          |       115 ns |
-| tensor_view   |        76 ns |
-| owning array  |     116.0 us |
-| owning tensor |     109.5 us |
+| numpy         |        43 ns |
+| ndarray       |        84 ns |
+| view          |       109 ns |
+| tensor_view   |        77 ns |
+| owning array  |     110.4 us |
+| owning tensor |     106.8 us |
 +---------------+--------------+
 
 === Sum Reduction (1D, 1,000,000 float64) ===
@@ -157,64 +117,64 @@ PYTHONPATH=build .venv/bin/python scripts/run_benchmarks.py
 | Backend       |    Time/call |
 +---------------+--------------+
 | numpy         |     118.0 us |
-| ndarray       |     391.4 us |
-| view          |     390.7 us |
-| tensor_view   |     387.3 us |
-| owning array  |     517.6 us |
-| owning tensor |     527.7 us |
-| native        |     387.2 us |
+| ndarray       |     390.1 us |
+| view          |     392.9 us |
+| tensor_view   |     391.3 us |
+| owning array  |     520.3 us |
+| owning tensor |     526.6 us |
+| native        |     389.6 us |
 +---------------+--------------+
 
 === Sum Reduction (2D, 1000x1000 float64) ===
 +---------------+--------------+
 | Backend       |    Time/call |
 +---------------+--------------+
-| numpy         |     120.0 us |
-| ndarray       |     395.9 us |
-| view          |     369.0 us |
-| tensor_view   |     368.9 us |
-| owning array  |     493.3 us |
-| owning tensor |     510.8 us |
-| native        |     392.0 us |
+| numpy         |     120.5 us |
+| ndarray       |     391.3 us |
+| view          |     365.8 us |
+| tensor_view   |     364.0 us |
+| owning array  |     543.8 us |
+| owning tensor |     517.0 us |
+| native        |     388.5 us |
 +---------------+--------------+
 
 === Element-wise sin(a)*s+t (1D, 1,000,000 float64) ===
 +---------------+--------------+
 | Backend       |    Time/call |
 +---------------+--------------+
-| numpy         |      6.45 ms |
-| view          |     822.2 us |
-| tensor_view   |     828.9 us |
-| owning array  |     983.3 us |
-| owning tensor |      1.04 ms |
-| native        |      6.19 ms |
+| numpy         |      6.46 ms |
+| view          |     811.2 us |
+| tensor_view   |     825.2 us |
+| owning array  |     997.5 us |
+| owning tensor |      1.02 ms |
+| native        |      6.17 ms |
 +---------------+--------------+
 
 === 2D Compute sin(a)*s+t (1000x1000, layout variants) ===
 +-----------------------+--------------+
 | Backend               |    Time/call |
 +-----------------------+--------------+
-| xarray row_major      |      1.00 ms |
-| xarray col_major      |      8.51 ms |
-| xarray dynamic        |      1.02 ms |
+| xarray row_major      |      1.05 ms |
+| xarray col_major      |      8.67 ms |
+| xarray dynamic        |      1.05 ms |
 | xtensor row_major     |      1.03 ms |
-| xtensor col_major     |      8.37 ms |
-| xtensor dynamic       |      1.01 ms |
-| view row_major        |     820.5 us |
-| view col_major        |      8.24 ms |
-| view dynamic          |     813.5 us |
-| tensor_view row_major |     819.6 us |
-| tensor_view col_major |      8.92 ms |
-| tensor_view dynamic   |     815.0 us |
+| xtensor col_major     |      8.69 ms |
+| xtensor dynamic       |      1.05 ms |
+| view row_major        |     813.4 us |
+| view col_major        |      8.35 ms |
+| view dynamic          |     813.0 us |
+| tensor_view row_major |     817.3 us |
+| tensor_view col_major |      8.30 ms |
+| tensor_view dynamic   |     836.4 us |
 +-----------------------+--------------+
 
 === Vectorization abs(x) (float64, 1,000,000) ===
 +--------------+--------------+
 | Backend      |    Time/call |
 +--------------+--------------+
-| np.abs       |     128.6 us |
-| np.vectorize |     50.87 ms |
-| xvectorize   |     142.8 us |
+| np.abs       |     142.9 us |
+| np.vectorize |     50.76 ms |
+| xvectorize   |     138.4 us |
 +--------------+--------------+
 
 ##############################################################
@@ -225,77 +185,77 @@ PYTHONPATH=build .venv/bin/python scripts/run_benchmarks.py
 +---------------+--------------+
 | Backend       |    Time/call |
 +---------------+--------------+
-| numpy         |        48 ns |
-| ndarray       |       282 ns |
+| numpy         |        36 ns |
+| ndarray       |       308 ns |
 | view          |        86 ns |
-| tensor_view   |        84 ns |
-| owning array  |     122.2 us |
-| owning tensor |     130.6 us |
+| tensor_view   |        98 ns |
+| owning array  |     132.1 us |
+| owning tensor |     113.6 us |
 +---------------+--------------+
 
 === Sum Reduction (1D, 1,000,000 float64) ===
 +---------------+--------------+
 | Backend       |    Time/call |
 +---------------+--------------+
-| numpy         |     129.9 us |
-| ndarray       |     389.9 us |
+| numpy         |     116.9 us |
+| ndarray       |     394.2 us |
 | view          |      2.33 ms |
-| tensor_view   |     391.3 us |
-| owning array  |     530.0 us |
-| owning tensor |     529.9 us |
-| native        |     390.3 us |
+| tensor_view   |     389.9 us |
+| owning array  |     546.5 us |
+| owning tensor |     558.4 us |
+| native        |     391.1 us |
 +---------------+--------------+
 
 === Sum Reduction (2D, 1000x1000 float64) ===
 +---------------+--------------+
 | Backend       |    Time/call |
 +---------------+--------------+
-| numpy         |     118.5 us |
-| ndarray       |     390.1 us |
-| view          |     389.9 us |
-| tensor_view   |     369.7 us |
-| owning array  |     499.9 us |
-| owning tensor |     509.0 us |
-| native        |     389.9 us |
+| numpy         |     119.2 us |
+| ndarray       |     389.2 us |
+| view          |     391.7 us |
+| tensor_view   |     367.5 us |
+| owning array  |     522.9 us |
+| owning tensor |     511.5 us |
+| native        |     388.9 us |
 +---------------+--------------+
 
 === Element-wise sin(a)*s+t (1D, 1,000,000 float64) ===
 +---------------+--------------+
 | Backend       |    Time/call |
 +---------------+--------------+
-| numpy         |      6.50 ms |
-| view          |     829.4 us |
-| tensor_view   |     801.0 us |
-| owning array  |      3.85 ms |
-| owning tensor |      3.81 ms |
-| native        |      6.24 ms |
+| numpy         |      6.48 ms |
+| view          |     843.4 us |
+| tensor_view   |     791.7 us |
+| owning array  |      3.01 ms |
+| owning tensor |      2.96 ms |
+| native        |      6.16 ms |
 +---------------+--------------+
 
 === 2D Compute sin(a)*s+t (1000x1000, layout variants) ===
 +-----------------------+--------------+
 | Backend               |    Time/call |
 +-----------------------+--------------+
-| xarray row_major      |      3.81 ms |
-| xarray col_major      |     11.93 ms |
-| xarray dynamic        |      3.74 ms |
-| xtensor row_major     |      3.80 ms |
-| xtensor col_major     |     10.85 ms |
-| xtensor dynamic       |      3.79 ms |
-| view row_major        |     838.7 us |
-| view col_major        |      8.63 ms |
-| view dynamic          |     837.9 us |
-| tensor_view row_major |     801.9 us |
+| xarray row_major      |      1.13 ms |
+| xarray col_major      |      8.93 ms |
+| xarray dynamic        |      1.11 ms |
+| xtensor row_major     |      1.11 ms |
+| xtensor col_major     |      9.08 ms |
+| xtensor dynamic       |      1.09 ms |
+| view row_major        |     839.6 us |
+| view col_major        |      8.81 ms |
+| view dynamic          |     848.0 us |
+| tensor_view row_major |     794.0 us |
 | tensor_view col_major |      7.54 ms |
-| tensor_view dynamic   |     806.8 us |
+| tensor_view dynamic   |     805.8 us |
 +-----------------------+--------------+
 
 === Vectorization abs(x) (float64, 1,000,000) ===
 +--------------+--------------+
 | Backend      |    Time/call |
 +--------------+--------------+
-| np.abs       |     144.5 us |
-| np.vectorize |     50.20 ms |
-| xvectorize   |     140.3 us |
+| np.abs       |     124.9 us |
+| np.vectorize |     50.87 ms |
+| xvectorize   |     127.2 us |
 +--------------+--------------+
 
 ##############################################################
@@ -306,26 +266,26 @@ PYTHONPATH=build .venv/bin/python scripts/run_benchmarks.py
 +-------------------------------------------+----------+----------------+
 | Metric                                    | nanobind | xtensor-python |
 +-------------------------------------------+----------+----------------+
-| Call overhead  [ndarray]                  |    87 ns |         282 ns |
-| Call overhead  [view]                     |   115 ns |          86 ns |
-| Call overhead  [owning array]             | 116.0 us |       122.2 us |
-| Sum 1D  [ndarray]                         | 391.4 us |       389.9 us |
-| Sum 1D  [view]                            | 390.7 us |        2.33 ms |
-| Sum 1D  [owning array]                    | 517.6 us |       530.0 us |
-| Sum 2D  [ndarray]                         | 395.9 us |       390.1 us |
-| Sum 2D  [view]                            | 369.0 us |       389.9 us |
-| Sum 2D  [owning array]                    | 493.3 us |       499.9 us |
-| Compute sin(a)*s+t  [view]                | 822.2 us |       829.4 us |
-| Compute sin(a)*s+t  [owning array]        | 983.3 us |        3.85 ms |
-| Compute2D xarray  [xarray row_major]      |  1.00 ms |        3.81 ms |
-| Compute2D xarray  [xarray dynamic]        |  1.02 ms |        3.74 ms |
-| Compute2D xtensor  [xtensor row_major]    |  1.03 ms |        3.80 ms |
-| Compute2D xtensor  [xtensor dynamic]      |  1.01 ms |        3.79 ms |
-| Compute2D view  [view row_major]          | 820.5 us |       838.7 us |
-| Compute2D view  [view dynamic]            | 813.5 us |       837.9 us |
-| Compute2D t.view  [tensor_view row_major] | 819.6 us |       801.9 us |
-| Compute2D t.view  [tensor_view dynamic]   | 815.0 us |       806.8 us |
-| Vectorize abs  [xvectorize]               | 142.8 us |       140.3 us |
+| Call overhead  [ndarray]                  |    84 ns |         308 ns |
+| Call overhead  [view]                     |   109 ns |          86 ns |
+| Call overhead  [owning array]             | 110.4 us |       132.1 us |
+| Sum 1D  [ndarray]                         | 390.1 us |       394.2 us |
+| Sum 1D  [view]                            | 392.9 us |        2.33 ms |
+| Sum 1D  [owning array]                    | 520.3 us |       546.5 us |
+| Sum 2D  [ndarray]                         | 391.3 us |       389.2 us |
+| Sum 2D  [view]                            | 365.8 us |       391.7 us |
+| Sum 2D  [owning array]                    | 543.8 us |       522.9 us |
+| Compute sin(a)*s+t  [view]                | 811.2 us |       843.4 us |
+| Compute sin(a)*s+t  [owning array]        | 997.5 us |        3.01 ms |
+| Compute2D xarray  [xarray row_major]      |  1.05 ms |        1.13 ms |
+| Compute2D xarray  [xarray dynamic]        |  1.05 ms |        1.11 ms |
+| Compute2D xtensor  [xtensor row_major]    |  1.03 ms |        1.11 ms |
+| Compute2D xtensor  [xtensor dynamic]      |  1.05 ms |        1.09 ms |
+| Compute2D view  [view row_major]          | 813.4 us |       839.6 us |
+| Compute2D view  [view dynamic]            | 813.0 us |       848.0 us |
+| Compute2D t.view  [tensor_view row_major] | 817.3 us |       794.0 us |
+| Compute2D t.view  [tensor_view dynamic]   | 836.4 us |       805.8 us |
+| Vectorize abs  [xvectorize]               | 138.4 us |       127.2 us |
 +-------------------------------------------+----------+----------------+
 ```
 
