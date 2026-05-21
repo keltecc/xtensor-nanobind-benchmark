@@ -2,10 +2,10 @@
 #include <chrono>
 #include <vector>
 
+#define FORCE_IMPORT_ARRAY
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
-#define FORCE_IMPORT_ARRAY
 #include <xtensor-python/pyarray.hpp>
 #include <xtensor-python/pytensor.hpp>
 #include <xtensor-python/pyvectorize.hpp>
@@ -117,12 +117,12 @@ PYBIND11_MODULE(benchmark_xtp_ext, m) {
 
     m.def("compute_xarray",
         [](const xt::xarray<double>& a, const double& s, const double& t) {
-        return xt::xarray<double>(xt::sin(a) * s + t);
+        return xt::pyarray<double>(xt::sin(a) * s + t);
     });
 
     m.def("compute_xtensor",
         [](const xt::xtensor<double, 1>& a, const double& s, const double& t) {
-        return xt::xtensor<double, 1>(xt::sin(a) * s + t);
+        return xt::pyarray<double>(xt::sin(a) * s + t);
     });
 
     m.def("compute_pyarray",
@@ -144,32 +144,32 @@ PYBIND11_MODULE(benchmark_xtp_ext, m) {
     m.def("compute2d_xarray_row_major",
         [](const xt::xarray<double, xt::layout_type::row_major>& a,
             const double& s, const double& t) {
-        return xt::xarray<double>(xt::sin(a) * s + t);
+        return xt::pyarray<double>(xt::sin(a) * s + t);
     });
     m.def("compute2d_xarray_column_major",
         [](const xt::xarray<double, xt::layout_type::column_major>& a,
             const double& s, const double& t) {
-        return xt::xarray<double>(xt::sin(a) * s + t);
+        return xt::pyarray<double>(xt::sin(a) * s + t);
     });
     m.def("compute2d_xarray_dynamic",
         [](const xt::xarray<double>& a, const double& s, const double& t) {
-        return xt::xarray<double>(xt::sin(a) * s + t);
+        return xt::pyarray<double>(xt::sin(a) * s + t);
     });
 
     // --- xtensor (owning, 2D) ---
     m.def("compute2d_xtensor_row_major",
         [](const xt::xtensor<double, 2, xt::layout_type::row_major>& a,
             const double& s, const double& t) {
-        return xt::xtensor<double, 2>(xt::sin(a) * s + t);
+        return xt::pyarray<double>(xt::sin(a) * s + t);
     });
     m.def("compute2d_xtensor_column_major",
         [](const xt::xtensor<double, 2, xt::layout_type::column_major>& a,
             const double& s, const double& t) {
-        return xt::xtensor<double, 2>(xt::sin(a) * s + t);
+        return xt::pyarray<double>(xt::sin(a) * s + t);
     });
     m.def("compute2d_xtensor_dynamic",
         [](const xt::xtensor<double, 2>& a, const double& s, const double& t) {
-        return xt::xtensor<double, 2>(xt::sin(a) * s + t);
+        return xt::pyarray<double>(xt::sin(a) * s + t);
     });
 
     // --- pyarray (zero-copy) ---
