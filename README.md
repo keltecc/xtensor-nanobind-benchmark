@@ -40,11 +40,11 @@ All four are header-only libraries. Building them with CMake generates the confi
 Example build from source:
 
 ```bash
-git clone https://github.com/xtensor-stack/xtl && cd xtl && cmake . && sudo make install && cd ..
-git clone https://github.com/xtensor-stack/xsimd && cd xsimd && cmake . && sudo make install && cd ..
-git clone https://github.com/xtensor-stack/xtensor && cd xtensor && cmake . && sudo make install && cd ..
-git clone https://github.com/xtensor-stack/xtensor-python
-git clone https://github.com/wjakob/nanobind --recursive
+git clone https://github.com/xtensor-stack/xtl /tmp/xtl && cd /tmp/xtl && cmake . && sudo make install
+git clone https://github.com/xtensor-stack/xsimd /tmp/xsimd && cd /tmp/xsimd && cmake . && sudo make install
+git clone https://github.com/xtensor-stack/xtensor /tmp/xtensor && cd /tmp/xtensor && cmake . && sudo make install
+git clone https://github.com/xtensor-stack/xtensor-python /tmp/xtensor-python
+git clone https://github.com/wjakob/nanobind --recursive /tmp/nanobind
 ```
 
 ## Quick start
