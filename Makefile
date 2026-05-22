@@ -22,7 +22,7 @@ ifdef CMAKE_CXX_COMPILER
 	CMAKE_ARGS += -DCMAKE_CXX_COMPILER=$(CMAKE_CXX_COMPILER)
 endif
 
-.PHONY: venv build benchmark benchmark-nanobind benchmark-xtensor-python clean
+.PHONY: venv build benchmark benchmark-nanobind benchmark-xtensor-python images clean
 
 venv:
 	python3 -m venv $(VENV)
@@ -45,5 +45,9 @@ benchmark-nanobind:
 benchmark-xtensor-python:
 	PYTHONPATH=build $(PYTHON) scripts/run_benchmarks.py --backend xtensor-python
 
+images: build
+	$(PYTHON) -m pip install matplotlib
+	PYTHONPATH=build $(PYTHON) scripts/plot_benchmarks.py
+
 clean:
-	rm -rf build .venv
+	rm -rf build .venv *.jpg
