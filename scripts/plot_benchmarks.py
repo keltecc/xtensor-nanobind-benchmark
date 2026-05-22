@@ -44,20 +44,24 @@ COMPARISONS = [
 ]
 
 
+REPEAT = 10
+
+
 def iters_for_n(n):
     if n <= 5:
-        return 20000
+        return 2000
     if n <= 50:
-        return 5000
+        return 500
     if n <= 200:
-        return 1000
-    return 200
+        return 100
+    return 20
 
 
 def bench(fn, arr, iters):
     g = {"fn": fn, "arr": arr, "s_val": S, "t_val": T}
-    total = timeit.timeit("fn(arr, s_val, t_val)", number=iters, globals=g)
-    return total / iters
+    times = timeit.repeat("fn(arr, s_val, t_val)", number=iters,
+                          repeat=REPEAT, globals=g)
+    return min(times) / iters
 
 
 def load_modules():
