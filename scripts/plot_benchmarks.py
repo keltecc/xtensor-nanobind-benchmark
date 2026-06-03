@@ -21,25 +21,37 @@ COMPARISONS = [
         "num": 1,
         "nb_func": "compute2d_xarray_dynamic",
         "xtp_func": "compute2d_xarray_dynamic",
-        "title": "xt::xarray (nanobind vs xtensor-python)",
+        "title": {
+            'nanobind': 'xt::xarray',
+            'xtensor-python': 'xt::xarray',
+        },
     },
     {
         "num": 2,
         "nb_func": "compute2d_xtensor_dynamic",
         "xtp_func": "compute2d_xtensor_dynamic",
-        "title": "xt::xtensor (nanobind vs xtensor-python)",
+        "title": {
+            'nanobind': 'xt::xtensor',
+            'xtensor-python': 'xt::xtensor',
+        },
     },
     {
         "num": 3,
         "nb_func": "compute2d_xarray_view_dynamic",
         "xtp_func": "compute2d_pyarray_dynamic",
-        "title": "nb::xarray_view vs xt::pyarray",
+        "title": {
+            'nanobind': 'nb::xarray_view',
+            'xtensor-python': 'xt::pyarray',
+        },
     },
     {
         "num": 4,
         "nb_func": "compute2d_xtensor_view_dynamic",
         "xtp_func": "compute2d_pytensor_dynamic",
-        "title": "nb::xtensor_view vs xt::pytensor",
+        "title": {
+            'nanobind': 'nb::xtensor_view',
+            'xtensor-python': 'xt::pytensor',
+        },
     },
 ]
 
@@ -106,10 +118,10 @@ def main():
 
             ls = "--" if dashed else "-"
             ax.plot(N_VALS, nb_times, marker="o", color=COLORS["nanobind"],
-                    label=f"nanobind ({cmp['title']})", linewidth=2, markersize=4, linestyle=ls)
+                    label=f"nanobind ({cmp['title']['nanobind']})", linewidth=2, markersize=4, linestyle=ls)
             if have_xtp:
                 ax.plot(N_VALS, xtp_times, marker="s", color=COLORS["xtensor-python"],
-                        label=f"xtensor-python ({cmp['title']})", linewidth=2, markersize=4, linestyle=ls)
+                        label=f"xtensor-python ({cmp['title']['xtensor-python']})", linewidth=2, markersize=4, linestyle=ls)
 
         ax.set_xlabel("N  (N×N array)")
         ax.set_ylabel("Time (us)")
